@@ -5,21 +5,49 @@ output:
     keep_md: true
 ---
 
+## Needed libraries
+```{r}
+library(lubridate)
+library(dplyr)
+```
 
 ## Loading and preprocessing the data
-
-
+```{r}
+data <- read.csv("activity.csv")
+data[,2] <- ymd(data[,2])
+```
 
 ## What is mean total number of steps taken per day?
-
-
+```{r}
+daily_totals <- aggregate(data$steps, by = list(Date = data$date), FUN = sum, na.rm = T)
+hist(daily_totals[,2], breaks = 8, col = "steelblue", main = "Total Steps per Day", xlab = "Total Steps per Day")
+```
+### Compute the mean and median
+```{r echo = FALSE}
+summary(daily_totals$x)
+```
 
 ## What is the average daily activity pattern?
+```{r}
+interval_means <- aggregate(data$steps, by = list(interval = data$interval), FUN = mean, na.rm = T)
+plot(interval_means[,1], interval_means[,2], type = "l", col = "steelblue", main = "Average Steps Per Interval", xlab = "Interval", ylab = "Steps")
+```
+### Which interval had the highest average activity?
+```{r echo = FALSE}
+arrange(interval_means, desc(x))[1,]
+```
 
+## Inputing missing values
+```{r missingValues}
+is_na <- is.na(data[,1])
+na_count <- sum(is_na)
 
-
-## Imputing missing values
-
+updated_data <- inner_join(data, interval_means)
+updated_data[is_na,2] <- updated_data[is_na,4]
+updated_daily_totals <- aggregate(updated_data$steps, by = list(Date = updated_data$date), FUN = sum, na.rm = T)
+hist(updated_daily_totals[,2], breaks = 8, col = "steelblue", main = "Total Steps per Day", xlab = "Total Steps per Day")
+summary(updated_daily_totals[,2])
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
