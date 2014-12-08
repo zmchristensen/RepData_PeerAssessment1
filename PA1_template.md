@@ -5,7 +5,7 @@ output:
     keep_md: true
 ---
 
-## Needed libraries
+## Import required libraries
 
 ```r
 library(lubridate)
@@ -14,13 +14,14 @@ library(ggplot2)
 ```
 
 ## Loading and preprocessing the data
+Read the csv file and convert the dates to POSIXct objects using the libridate library.
 
 ```r
 data <- read.csv("activity.csv")
 data[,2] <- ymd(data[,2])
 ```
 
-## What is mean total number of steps taken per day?
+## What is mean total number of steps taken per day?and then find the average. 
 
 ```r
 ## Aggregate the daily totals
@@ -30,7 +31,7 @@ daily_totals <- aggregate(data$steps, by = list(Date = data$date), FUN = sum, na
 hist(daily_totals[,2], breaks = 8, col = "steelblue", main = "Total Steps per Day", xlab = "Total Steps per Day")
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-3-1.png) 
+![plot of chunk meanStepsDaily](figure/meanStepsDaily-1.png) 
 
 ```r
 ## Compute the mean and median
@@ -52,7 +53,7 @@ interval_means <- aggregate(data$steps, by = list(interval = data$interval), FUN
 plot(interval_means[,1], interval_means[,2], type = "l", col = "steelblue", main = "Average Steps Per Interval", xlab = "Interval", ylab = "Steps")
 ```
 
-![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4-1.png) 
+![plot of chunk averageDaily](figure/averageDaily-1.png) 
 
 ```r
 ## Which interval had the highest average activity?
@@ -76,6 +77,13 @@ is_na <- is.na(data[,1])
 ## [1] "There are 2304 missing values"
 ```
 
+There are several ways the missing values in the data set could be replaced, depending on the level of accuracy required. The method I chose was to compute the average steps taken during each five minute interval across the whole data set. 
+
+This assumes that the same interval of time between days is similar: if you walk from your car to the office on Monday at interval = 500, you do that every other day as well, and thus your step count should be similar. This method obviously falls short in that there is likely variance between peoples' daily schedules, particularly between weekdays and weekends.
+
+The particular steps I took to compute these averages and replacing missing values is described in the code comments. 
+
+
 
 ```r
 ## Join the data and the interval averages so missing values can be 'copied' over
@@ -96,7 +104,7 @@ updated_daily_totals <- aggregate(updated_data$steps, by = list(Date = updated_d
 hist(updated_daily_totals[,2], breaks = 8, col = "steelblue", main = "Total Steps per Day", xlab = "Total Steps per Day")
 ```
 
-![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6-1.png) 
+![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2-1.png) 
 
 ```r
 ## Compute the mean and median
@@ -107,6 +115,8 @@ summary(updated_daily_totals[,2])
 ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
 ##      41    9819   10770   10770   12810   21190
 ```
+Filling in the missing values with the average for that interval significantly increases the mean and median values of the daily totals. 
+
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
@@ -128,4 +138,12 @@ qplot(Interval, x, data = week_totals, geom = "line", facets = Day ~ .)
 ```
 
 ![plot of chunk dayDifferences](figure/dayDifferences-1.png) 
+
+While weekdays have an interval with the highest average step count, there are more overall steps taken on the weekend.
+
+```
+##       Day        x
+## 1 Weekday 10255.85
+## 2 Weekend 12201.52
+```
 
