@@ -9,6 +9,7 @@ output:
 ```{r}
 library(lubridate)
 library(dplyr)
+library(ggplot2)
 ```
 
 ## Loading and preprocessing the data
@@ -19,53 +20,68 @@ data[,2] <- ymd(data[,2])
 
 ## What is mean total number of steps taken per day?
 ```{r}
+## Aggregate the daily totals
 daily_totals <- aggregate(data$steps, by = list(Date = data$date), FUN = sum, na.rm = T)
+
+## Create a histogram of Total Steps per Day 
 hist(daily_totals[,2], breaks = 8, col = "steelblue", main = "Total Steps per Day", xlab = "Total Steps per Day")
-```
-### Compute the mean and median
-```{r echo = FALSE}
+
+## Compute the mean and median
 summary(daily_totals$x)
 ```
 
 ## What is the average daily activity pattern?
 ```{r}
+## Compute the mean steps per interval
 interval_means <- aggregate(data$steps, by = list(interval = data$interval), FUN = mean, na.rm = T)
+
+## Create a plot of average steps vs. interval
 plot(interval_means[,1], interval_means[,2], type = "l", col = "steelblue", main = "Average Steps Per Interval", xlab = "Interval", ylab = "Steps")
-```
-### Which interval had the highest average activity?
-```{r echo = FALSE}
+
+## Which interval had the highest average activity?
 arrange(interval_means, desc(x))[1,]
 ```
 
 ## Inputing missing values
 ```{r missingValues}
+## Determine which rows contain missing values
 is_na <- is.na(data[,1])
-na_count <- sum(is_na)
+```
 
+```{r echo = FALSE}
+print(paste("There are", sum(is_na), "missing values"))
+```
+
+```{r}
+## Join the data and the interval averages so missing values can be 'copied' over
 updated_data <- inner_join(data, interval_means)
 updated_data[is_na,2] <- updated_data[is_na,4]
+
+## Aggregate the daily totals
 updated_daily_totals <- aggregate(updated_data$steps, by = list(Date = updated_data$date), FUN = sum, na.rm = T)
+
+## Create a histogram of Total Steps per Day 
 hist(updated_daily_totals[,2], breaks = 8, col = "steelblue", main = "Total Steps per Day", xlab = "Total Steps per Day")
+
+## Compute the mean and median
 summary(updated_daily_totals[,2])
 ```
 
 ## Are there differences in activity patterns between weekdays and weekends?
 ```{r dayDifferences}
-days <- weekdays(updated_data[,3])
-weekdays <- days == "Monday" | days == "Tuesday" | days == "Wednesday" | days == "Thursday" | days == "Friday"
+## Determine which days are on the weekend
+day <- weekdays(updated_data[,3])
+weekends <- day == "Saturday" | day == "Sunday"
 
-week_data <- data.frame(updated_data, days, stringsAsFactors = FALSE)
-week_data[weekdays,5] <- "Weekday"
-week_data[!weekdays,5] <- "Weekend"
+## Combine the data and days, the rename 'day' to either 'Weekday' or 'Weekend'
+week_data <- data.frame(updated_data, day, stringsAsFactors = FALSE)
+week_data[!weekends,5] <- "Weekday"
+week_data[weekends,5] <- "Weekend"
 
+## Average the steps per interval for 'Weekend' and 'Weekday'
 week_totals <- aggregate(week_data$steps, by = list(Day = week_data[,5], Interval = week_data$interval), FUN = mean, na.rm = T)
 
-weekend <- filter(week_totals, Day == "Weekend")
-weekday <- filter(week_totals, Day == "Weekday")
-plot(weekend$Interval, weekend$x, type = "l", col = "steelblue", main = "Average Steps Per Interval", xlab = "Interval", ylab = "Steps")
-lines(weekday$Interval, weekday$x, col = "seagreen")
-legend("topright", lwd = 1, legend = c("Weekend", "Weekday"), col = c("steelblue", "seagreen"))
-
-
+## Create 2-panel line chart of average steps per interval for each day type
+qplot(Interval, x, data = week_totals, geom = "line", facets = Day ~ .)
 ```
 
