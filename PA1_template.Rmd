@@ -49,5 +49,23 @@ hist(updated_daily_totals[,2], breaks = 8, col = "steelblue", main = "Total Step
 summary(updated_daily_totals[,2])
 ```
 
-
 ## Are there differences in activity patterns between weekdays and weekends?
+```{r dayDifferences}
+days <- weekdays(updated_data[,3])
+weekdays <- days == "Monday" | days == "Tuesday" | days == "Wednesday" | days == "Thursday" | days == "Friday"
+
+week_data <- data.frame(updated_data, days, stringsAsFactors = FALSE)
+week_data[weekdays,5] <- "Weekday"
+week_data[!weekdays,5] <- "Weekend"
+
+week_totals <- aggregate(week_data$steps, by = list(Day = week_data[,5], Interval = week_data$interval), FUN = mean, na.rm = T)
+
+weekend <- filter(week_totals, Day == "Weekend")
+weekday <- filter(week_totals, Day == "Weekday")
+plot(weekend$Interval, weekend$x, type = "l", col = "steelblue", main = "Average Steps Per Interval", xlab = "Interval", ylab = "Steps")
+lines(weekday$Interval, weekday$x, col = "seagreen")
+legend("topright", lwd = 1, legend = c("Weekend", "Weekday"), col = c("steelblue", "seagreen"))
+
+
+```
+
